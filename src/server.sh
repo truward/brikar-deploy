@@ -95,7 +95,9 @@ JVM_PROPS="$JVM_PROPS -Djava.util.logging.config.file=$JUL_LOG_FILE"
 # JVM_PROPS="$JVM_PROPS -Dsun.net.inetaddr.ttl=60 -Dnetworkaddress.cache.ttl=60 -Dsun.net.inetaddr.negative.ttl=10 -Djava.net.preferIPv4Stack=true"
 
 # JMX Settigns
-JVM_PROPS="$JVM_PROPS -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=$JMX_PORT -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
+if [ ! -z "$ENABLE_DEV_JMX" ]; then
+    JVM_PROPS="$JVM_PROPS -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=$JMX_PORT -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
+fi
 
 # OOM handling
 JVM_PROPS="$JVM_PROPS -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$HEAP_DUMP_PATH"
@@ -149,9 +151,14 @@ stop_server ()
 {
     if [ -f $PID_PATH ]; then
         PID=$(cat $PID_PATH);
-        echo "$SERVICE_NAME stoping ..."
-        kill $PID;
-        echo "$SERVICE_NAME stopped ..."
+        if ps -p $PID > /dev/null; then
+            echo "$SERVICE_NAME found running, stoping ..."
+            kill $PID;
+            echo "$SERVICE_NAME stopped ..."
+        else
+            echo "$SERVICE_NAME already stopped"
+        fi
+
         rm $PID_PATH
     else
         echo "$SERVICE_NAME is not running, stop is not required ..."

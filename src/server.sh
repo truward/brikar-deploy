@@ -158,7 +158,11 @@ stop_server ()
     fi
 }
 
-case $1 in
+if [ -z SERVER_START_ACTION ]; then
+    SERVER_START_ACTION = $1
+fi
+
+case $SERVER_START_ACTION in
     start)
         start_server
     ;;

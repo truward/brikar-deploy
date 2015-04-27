@@ -16,11 +16,6 @@ if [ -z "$SERVICE_NAME" ]; then
     exit -1
 fi
 
-if [ -z "$SRC_JAR" ]; then
-    echo "ERROR: Please, set up SRC_JAR (path to source app jar) variable before running this script"
-    exit -1
-fi
-
 if [ -z "$SRC_PROPS" ]; then
     echo "ERROR: Please, set up SRC_PROPS (path to source app properties) variable before running this script"
     exit -1
@@ -30,9 +25,11 @@ fi
 # Check for existence of source files
 #
 
-if [ ! -f $SRC_JAR ]; then
-    echo "ERROR: No jar file at $SRC_JAR"
-    exit -1
+if [ ! -z "$SRC_JAR" ]; then
+    if [ ! -f $SRC_JAR ]; then
+        echo "ERROR: No jar file at $SRC_JAR"
+        exit -1
+    fi
 fi
 
 if [ ! -f $SRC_PROPS ]; then
@@ -48,6 +45,9 @@ BASE_DIR=/usr/local/$SERVICE_NAME
 
 mkdir -p $BASE_DIR/var/log
 
-cp $SRC_JAR $BASE_DIR/app.jar
+if [ ! -z "$SRC_JAR" ]; then
+    cp $SRC_JAR $BASE_DIR/app.jar
+fi
+
 cp $SRC_PROPS $BASE_DIR/var/app.properties
 

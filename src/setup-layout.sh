@@ -44,8 +44,7 @@ fi
 BASE_DIR=/usr/local/$SERVICE_NAME
 I_AM=`whoami`
 
-sudo mkdir -p $BASE_DIR/var/log
-sudo chown -R $I_AM $BASE_DIR 
+mkdir -p $BASE_DIR/var/log
 
 if [ ! -z "$SRC_JAR" ]; then
     cp $SRC_JAR $BASE_DIR/app.jar

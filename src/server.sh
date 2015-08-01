@@ -62,11 +62,6 @@ if [ -z "$JVM_DEBUG_PORT" ]; then
     JVM_DEBUG_PORT=7301
 fi
 
-if [ -z "$GC_PERM_SIZE" ]; then
-    # TODO: consider the fact that PermGen doesn't exist in GC introduced in Java8
-    GC_PERM_SIZE=64m
-fi
-
 if [ -z "$GC_MAX_HEAP_SIZE" ]; then
     GC_MAX_HEAP_SIZE=256m
 fi
@@ -103,10 +98,10 @@ fi
 JVM_PROPS="$JVM_PROPS -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$HEAP_DUMP_PATH"
 
 # GC Heap Settings
-JVM_PROPS="$JVM_PROPS -XX:+UseCompressedOops -XX:MaxPermSize=$GC_PERM_SIZE -Xmx$GC_MAX_HEAP_SIZE -Xms$GC_START_HEAP_SIZE"
+JVM_PROPS="$JVM_PROPS -XX:+UseCompressedOops -Xmx$GC_MAX_HEAP_SIZE -Xms$GC_START_HEAP_SIZE"
 
 # Debug Settings
-if [[ $JVM_DEBUG_ENABLED == 1 ]]; then
+if [ $JVM_DEBUG_ENABLED -eq 1 ]; then
   # TODO: consider adding -verbose:gc and -XX:+PrintGCDetails
   JVM_PROPS="$JVM_PROPS -agentlib:jdwp=transport=dt_socket,server=y,suspend=$JVM_DEBUG_SUSPEND,address=$JVM_DEBUG_PORT"
 fi
@@ -153,7 +148,9 @@ stop_server ()
         PID=$(cat $PID_PATH);
         if ps -p $PID > /dev/null; then
             echo "$SERVICE_NAME found running, stoping ..."
-            kill $PID;
+            # Use SIGINT
+            # TODO: wait until process is really killed
+            kill -INT $PID;
             echo "$SERVICE_NAME stopped ..."
         else
             echo "$SERVICE_NAME already stopped"
@@ -169,6 +166,8 @@ if [ -z SERVER_START_ACTION ]; then
     SERVER_START_ACTION = $1
 fi
 
+echo "About to $SERVER_START_ACTION server..."
+
 case $SERVER_START_ACTION in
     start)
         start_server
@@ -181,3 +180,6 @@ case $SERVER_START_ACTION in
         start_server
     ;;
 esac
+
+echo "Done."
+

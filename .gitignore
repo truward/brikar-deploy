@@ -5,3 +5,5 @@ target
 *.iws
 
 .DS_Store
+
+.venv-*

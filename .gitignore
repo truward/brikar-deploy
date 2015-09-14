@@ -6,4 +6,7 @@ target
 
 .DS_Store
 
+# Python
 .venv-*
+*.pyc
+

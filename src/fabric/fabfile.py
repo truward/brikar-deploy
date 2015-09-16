@@ -1,3 +1,6 @@
+# Deployment script for brikar web applications
+# Alexander Shabanov, 2015
+
 from fabric.api import local, abort, run, sudo, put
 from fabric.contrib.files import exists
 
@@ -34,56 +37,89 @@ def deploy(local_app_path):
   print 'shasum(%s) = %s' % (local_app, local_app_hash)
 
   # Create directory structure
+  webapp_path = '/opt/webapp'
+  if not exists(webapp_path):
+    sudo('mkdir -p %s' % webapp_path)
+    sudo('chown -R %s %s' % (run('whoami'), webapp_path))
+
   root_path = '/opt/webapp/%s' % app_name
   if not exists(root_path):
     print 'Creating %s...' % root_path
-    sudo('mkdir -p %s' % root_path)
+    run('mkdir -p %s' % root_path)
 
   var_path = '%s/var' % root_path
   if not exists(var_path):
-    sudo('mkdir %s' % var_path)
+    run('mkdir %s' % var_path)
 
   log_path = '%s/log' % var_path
   if not exists(log_path):
-    print 'Creating log path %s' % log_path
-    sudo('mkdir %s' % log_path)
-  else:
-    print 'No need to create log path %s' % log_path
+    run('mkdir %s' % log_path)
 
   props_path = '%s/app.properties' % var_path
 
   bin_path = '%s/bin' % root_path
   if not exists(bin_path):
-    sudo('mkdir %s' % bin_path)
+    run('mkdir %s' % bin_path)
 
   app_path = '%s/app.jar' % bin_path
 
   # Copy files
-  put('./server.sh', '%s/server.sh' % bin_path, use_sudo=True)
-  put(local_healthcheck, '%s/healthcheck.sh' % bin_path, use_sudo=True)
-  put(local_props, props_path, use_sudo=True)
+  put('./server.sh', '%s/server.sh' % bin_path)
+  put(local_healthcheck, '%s/healthcheck.sh' % bin_path)
+  put(local_props, props_path)
 
   app_copy_required=True
   if exists(app_path):
-    app_hash = sudo('cat %s | shasum' % app_path)
+    app_hash = run('cat %s | shasum' % app_path)
     print 'shasum(%s) = %s' % (app_path, app_hash)
     if app_hash == local_app_hash:
       print 'Local and remote app.jar hashes match each other, skipping copying'
       app_copy_required=False
   
   if app_copy_required:
-    put(local_app, app_path, use_sudo=True)
+    put(local_app, app_path)
 
   # Create deployment.txt which will contain deployment information
   put(StringIO('''Deployment of %s from %s completed successfully.
 Local deployment time=%s
-''' % (app_name, local_app_path, strftime("%Y-%m-%d %H:%M:%SZ", gmtime()))), '%s/deployment.txt' % root_path, use_sudo=True)
+''' % (app_name, local_app_path, strftime("%Y-%m-%d %H:%M:%SZ", gmtime()))), '%s/deployment.txt' % root_path)
 
   # Run the server
-  sudo('export SERVICE_NAME=%s && export BASE_DIR=%s && export SERVER_START_ACTION=restart && bash %s/server.sh' % (app_name, root_path, bin_path))
+  run('export SERVICE_NAME=%s && export BASE_DIR=%s && export SERVER_START_ACTION=restart && bash %s/server.sh' % (app_name, root_path, bin_path))
 
   # Copy artifacts
   print 'Deployment of %s succeeded!' % app_name
+
+
+#
+# Stop entry point (finds remotely running application and tries to stop it)
+#
+
+def stop(app_name):
+  print 'Trying to stop %s' % app_name
+  root_path = '/opt/webapp/%s' % app_name
+  run('export SERVICE_NAME=%s && export BASE_DIR=%s && export SERVER_START_ACTION=stop && bash %s/bin/server.sh' % (app_name, root_path, root_path))
+  print 'Stop %s succeeded!' % app_name
+
+#
+# Restart entry point
+#
+
+def restart(app_name):
+  print 'Trying to restart %s' % app_name
+  root_path = '/opt/webapp/%s' % app_name
+  run('export SERVICE_NAME=%s && export BASE_DIR=%s && export SERVER_START_ACTION=restart && bash %s/bin/server.sh' % (app_name, root_path, root_path))
+  print 'Restart %s succeeded!' % app_name
+
+#
+# Undeploy entry point
+#
+
+def undeploy(app_name):
+  print 'Trying to undeploy %s' % app_name
+  stop(app_name)
+  sudo('rm -rf /opt/webapp/%s' % app_name)
+  print 'Undeploy %s succeeded' % app_name
 
 
 

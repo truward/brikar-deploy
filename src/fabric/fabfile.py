@@ -1,7 +1,7 @@
 # Deployment script for brikar web applications
-# Alexander Shabanov, 2015
+# Alexander Shabanov, 2015-2016
 
-from fabric.api import local, abort, run, sudo, put
+from fabric.api import local, abort, run, put
 from fabric.contrib.files import exists
 
 from StringIO import StringIO
@@ -39,8 +39,8 @@ def deploy(local_app_path):
   # Create directory structure
   webapp_path = '/opt/webapp'
   if not exists(webapp_path):
-    sudo('mkdir -p %s' % webapp_path)
-    sudo('chown -R %s %s' % (run('whoami'), webapp_path))
+    run('mkdir -p %s' % webapp_path)
+    run('chown -R %s %s' % (run('whoami'), webapp_path))
 
   root_path = '/opt/webapp/%s' % app_name
   if not exists(root_path):
@@ -84,6 +84,12 @@ def deploy(local_app_path):
 Local deployment time=%s
 ''' % (app_name, local_app_path, strftime("%Y-%m-%d %H:%M:%SZ", gmtime()))), '%s/deployment.txt' % root_path)
 
+  # Create oom.sh - file which will be used by JVM on OOM condition
+  put(StringIO('''# !/bin/sh
+kill -9 `%s/process-pid`
+''' % var_path), '%s/oom.sh' % bin_path)
+  run('chmod +x %s/oom.sh' % bin_path)
+
   # Run the server
   run('export SERVICE_NAME=%s && export BASE_DIR=%s && export SERVER_START_ACTION=restart && bash %s/server.sh' % (app_name, root_path, bin_path))
 
@@ -118,7 +124,7 @@ def restart(app_name):
 def undeploy(app_name):
   print 'Trying to undeploy %s' % app_name
   stop(app_name)
-  sudo('rm -rf /opt/webapp/%s' % app_name)
+  run('rm -rf /opt/webapp/%s' % app_name)
   print 'Undeploy %s succeeded' % app_name
 
 

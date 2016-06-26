@@ -21,6 +21,10 @@ if [ -z "$HEALTH_CHECK" ]; then
     HEALTH_CHECK=$BASE_DIR/bin/healthcheck.sh
 fi
 
+if [ -z "$OOM_PATH" ]; then
+    OOM_PATH=$BASE_DIR/bin/oom.sh
+fi
+
 if [ -z "$JAR_PATH" ]; then
     JAR_PATH=$BASE_DIR/bin/app.jar
 fi
@@ -120,7 +124,7 @@ start_server ()
         # Entry Point
         # Uses custom configuration as well as "live" log settings
         # Explicitly add out of memory error handling as bash is unable to expand quoted args
-        nohup java $JVM_PROPS -XX:OnOutOfMemoryError='/bin/kill -9 %p' -jar $JAR_PATH --config $CONFIG_PATH > $LOGDIR_PATH/nohup.out 2> $LOGDIR_PATH/nohup.err &
+        nohup java $JVM_PROPS -XX:OnOutOfMemoryError=$OOM_PATH -Dbrikar.settings.path=$CONFIG_PATH -jar $JAR_PATH > $LOGDIR_PATH/nohup.out 2> $LOGDIR_PATH/nohup.err &
         echo $! > $PID_PATH
         echo "$SERVICE_NAME started ..."
 

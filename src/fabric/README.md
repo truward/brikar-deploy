@@ -1,4 +1,19 @@
 
+# Usage
+
+```
+virtualenv .venv-fab
+. .venv-fab/bin/activate
+pip install -r requirements.txt
+```
+
+Then (in other dev sessions):
+
+```
+. .venv-fab/bin/activate
+(Use fab commands)
+```
+
 # Deployment Example
 
 AWS:
@@ -18,7 +33,7 @@ fab deploy:$HOME/opt/deploy/brikar-demo-website -i $HOME/vagrant/test-deploy-box
 Stop:
 
 ```
-fab stop:brikar-demo-website -i /path-to/private_key -H vagrant@127.0.0.1:2222
+fab stop:brikar-demo-website -u REMOTE_USERNAME -i /path-to/private_key -H vagrant@127.0.0.1:2222
 ```
 
 Restart:

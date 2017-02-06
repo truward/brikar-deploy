@@ -257,6 +257,7 @@ PID_PATH=$SERVICE_DIR/var/process-pid
 PID=\$(cat \$PID_PATH)
 
 kill -9 \$PID
+rm \$PID_PATH
 " > $SERVICE_DIR/bin/oom.sh
 
 # Create app.properties

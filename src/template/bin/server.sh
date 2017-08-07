@@ -82,6 +82,15 @@ echo "Using JVM settings: $JVM_PROPS"
 
 start_server ()
 {
+    echo "Running custom installation for $SERVICE_NAME"
+    bash "$BIN_PATH/custom-install.sh"
+    if [ $? -eq 0 ]; then
+       echo "Custom installation completed"
+    else
+       echo "Custom installation script returned non-success error code, aborting"
+       exit 1
+    fi
+
     echo "Starting $SERVICE_NAME ..."
     if [ ! -f $PID_PATH ]; then
         # Entry Point
@@ -113,7 +122,7 @@ start_server ()
             exit 1
         fi 
     else
-        echo "$SERVICE_NAME is already running ..."
+        echo "$SERVICE_NAME is already running..."
     fi
 }
 

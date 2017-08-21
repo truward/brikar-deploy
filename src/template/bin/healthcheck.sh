@@ -1,4 +1,4 @@
-# !/bin/bash
+#!/usr/bin/env bash
 
 # The output of healthcheck script should be exactly "OK" to consider health check to be successful.
 

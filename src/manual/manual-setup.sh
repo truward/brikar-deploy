@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # !/bin/bash
 
 # Fail on error

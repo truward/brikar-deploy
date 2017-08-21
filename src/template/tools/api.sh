@@ -1,4 +1,4 @@
-# !/bin/bash
+#!/usr/bin/env bash
 
 # Get input parameters
 ACTION=$1
@@ -21,7 +21,7 @@ SVC_CREDS="testonly:test"
 # Customize port/service URI, depending on whether they are included in app.properties:
 #PORT="$(prop 'brikar.settings.port')"
 #SVC_URI="http://127.0.0.1:$PORT"
-#SVC_CREDS="$(prop 'userService.auth.1.username'):$(prop 'userService.auth.1.password')"
+#SVC_CREDS="$(prop 'app.auth.1.username'):$(prop 'app.auth.1.password')"
 
 # Execute toolbox action
 case $ACTION in

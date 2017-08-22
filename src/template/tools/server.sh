@@ -3,28 +3,22 @@
 # Server script for applications with embedded servlet container.
 ################################################################
 
-#
-# Properties
-#
-
+TOOLS_DIR=$(dirname "$0")
+source "$TOOLS_DIR/common.sh"
 
 # Read init parameters
 ACTION=$1
 
 # Infer directories
-BIN_PATH=$(dirname "$0")
-BASE_DIR=$(cd "$BIN_PATH/../" && pwd)
-SERVICE_NAME=$BASE_DIR
+HEALTH_CHECK="$TOOLS_DIR/healthcheck.sh"
+OOM_PATH="$TOOLS_DIR/oom.sh"
+JAR_PATH="$BIN_DIR/app.jar"
 
-HEALTH_CHECK=$BIN_PATH/healthcheck.sh
-OOM_PATH=$BIN_PATH/oom.sh
-JAR_PATH=$BIN_PATH/app.jar
-CONFIG_PATH=file:$BASE_DIR/var/app.properties
-PID_PATH=$BASE_DIR/var/process-pid
-LOGDIR_PATH=$BASE_DIR/var/log
-JUL_LOG_FILE=$BASE_DIR/var/log/jul.log
+JUL_LOG_FILE="$LOGS_DIR/jul.log"
 JMX_PORT=7299
-HEAP_DUMP_PATH=$BASE_DIR/var/heapdump
+HEAP_DUMP_PATH="$VAR_DIR/heapdump"
+
+PROPERTIES_URL="file:$PROPERTIES_FILE"
 
 # No: 0 or Yes: 1
 JVM_DEBUG_ENABLED=0
@@ -49,7 +43,7 @@ ENABLE_DEV_JMX=
 JVM_PROPS="-server"
 
 # Logging Configuration
-JVM_PROPS="$JVM_PROPS -Dapp.logback.logBaseName=$LOGDIR_PATH/app -Dapp.logback.rootLogId=ROLLING_FILE"
+JVM_PROPS="$JVM_PROPS -Dapp.logback.logBaseName=$LOGS_DIR/app -Dapp.logback.rootLogId=ROLLING_FILE"
 
 # Internal Java Logging
 JVM_PROPS="$JVM_PROPS -Djava.util.logging.config.file=$JUL_LOG_FILE"
@@ -58,9 +52,9 @@ JVM_PROPS="$JVM_PROPS -Djava.util.logging.config.file=$JUL_LOG_FILE"
 # TODO: enable if needed
 # JVM_PROPS="$JVM_PROPS -Dsun.net.inetaddr.ttl=60 -Dnetworkaddress.cache.ttl=60 -Dsun.net.inetaddr.negative.ttl=10 -Djava.net.preferIPv4Stack=true"
 
-# JMX Settigns
+# JMX Settings
 if [ ! -z "$ENABLE_DEV_JMX" ]; then
-    JVM_PROPS="$JVM_PROPS -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=$JMX_PORT -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
+  JVM_PROPS="$JVM_PROPS -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=$JMX_PORT -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
 fi
 
 # OOM handling
@@ -83,8 +77,8 @@ echo "Using JVM settings: $JVM_PROPS"
 
 start_server ()
 {
-    echo "Running custom installation for $SERVICE_NAME"
-    bash "$BIN_PATH/custom-install.sh"
+    echo "Running custom installation for $APP_NAME"
+    bash "$TOOLS_DIR/custom-install.sh"
     if [ $? -eq 0 ]; then
        echo "Custom installation completed"
     else
@@ -92,16 +86,16 @@ start_server ()
        exit 1
     fi
 
-    echo "Starting $SERVICE_NAME ..."
+    echo "Starting $APP_NAME ..."
     if [ ! -f $PID_PATH ]; then
         # Entry Point
         # Uses custom configuration as well as "live" log settings
         # Explicitly add out of memory error handling as bash is unable to expand quoted args
-        nohup java $JVM_PROPS -XX:OnOutOfMemoryError=$OOM_PATH -Dbrikar.settings.path=$CONFIG_PATH -jar $JAR_PATH > $LOGDIR_PATH/nohup.out 2> $LOGDIR_PATH/nohup.err &
+        nohup java $JVM_PROPS -XX:OnOutOfMemoryError=$OOM_PATH -Dbrikar.settings.path=$PROPERTIES_URL -jar $JAR_PATH > $LOGS_DIR/nohup.out 2> $LOGS_DIR/nohup.err &
         echo $! > $PID_PATH
-        echo "$SERVICE_NAME started ..."
+        echo "$APP_NAME started ..."
 
-        # Wait until healthcheck returns OK
+        # Wait until health check returns OK
         SERVER_STARTED=0
         for attempt in `seq 1 50`; do
             # Sleep one second
@@ -109,7 +103,7 @@ start_server ()
             sleep 1
 
             # Check if started
-            HEALTH_CHECK_OUTPUT=`bash $HEALTH_CHECK`
+            HEALTH_CHECK_OUTPUT=`bash ${HEALTH_CHECK}`
             if [ "$HEALTH_CHECK_OUTPUT" = "OK" ]; then
                 echo "Health check succeeded"
                 SERVER_STARTED=1
@@ -123,7 +117,7 @@ start_server ()
             exit 1
         fi 
     else
-        echo "$SERVICE_NAME is already running..."
+        echo "$APP_NAME is already running..."
     fi
 }
 
@@ -144,7 +138,7 @@ stop_server ()
       
                 # Check if we still have process with the given pid
                 if ps -p $PID > /dev/null; then
-                    echo "Service $SERVICE_NAME is still running, attempting to stop..."
+                    echo "Service $APP_NAME is still running, attempting to stop..."
                 else
                     STOP_SUCCEEDED=1
                     echo "Server stopped"
@@ -156,7 +150,7 @@ stop_server ()
             done
         else
             STOP_SUCCEEDED=1
-            echo "Server $SERVICE_NAME already stopped"
+            echo "Server $APP_NAME already stopped"
         fi
 
         # Check if stop succeeded
@@ -167,18 +161,18 @@ stop_server ()
 
         rm $PID_PATH
     else
-        echo "$SERVICE_NAME is not running, stop is not required ..."
+        echo "$APP_NAME is not running, stop is not required ..."
     fi
 }
 
-if [ -z $ACTION ]; then
+if [ -z ${ACTION} ]; then
     echo "Server start action has not been set, expected: start, stop or restart."
     exit 1
 fi
 
 echo "About to $ACTION server..."
 
-case $ACTION in
+case ${ACTION} in
     start)
         start_server
     ;;

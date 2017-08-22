@@ -1,27 +1,17 @@
 #!/usr/bin/env bash
 
+# Include common script base
+TOOLS_DIR=$(dirname "$0")
+source "$TOOLS_DIR/common.sh"
+
 # Get input parameters
 ACTION=$1
 
-# Fail on error
-set -e
-
-# Infer directories
-TOOLS_PATH=$(dirname "$0")
-BASE_DIR=$(cd "$TOOLS_PATH/../" && pwd)
-
-function prop {
-  grep "${1}" $BASE_DIR/var/app.properties|cut -d'=' -f2
-}
-
-PORT=8080
-SVC_URI="http://127.0.0.1:$PORT"
-SVC_CREDS="testonly:test"
-
-# Customize port/service URI, depending on whether they are included in app.properties:
-#PORT="$(prop 'brikar.settings.port')"
-#SVC_URI="http://127.0.0.1:$PORT"
-#SVC_CREDS="$(prop 'app.auth.1.username'):$(prop 'app.auth.1.password')"
+# Infer application target parameters
+HOST=$(prop 'brikar.tools.host')
+PORT=$(prop 'brikar.tools.port')
+SVC_URI="$HOST:$PORT"
+SVC_CREDS="$(prop 'brikar.tools.username'):$(prop 'brikar.tools.password')"
 
 # Execute toolbox action
 case $ACTION in
